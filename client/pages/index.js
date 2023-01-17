@@ -9,7 +9,7 @@ export default function Home() {
   const [allWaves, setAllWaves] = useState([]);
 
 
-  const contractAddress = "0xB10b4BdE5C1EF034817f1778277100A540aF89Cf";
+  const contractAddress = "0xdcd0575af9a2d52B1FAb633cE4647464eE1E127A";
   const contractABI = abi.abi;
 
   const findMetaMaskAccount = async () => {
@@ -149,6 +149,36 @@ export default function Home() {
   useEffect(() => {
     findMetaMaskAccount();
     getAllWaves();
+  }, []);
+
+  useEffect(() => {
+    let wavePortalContract;
+
+    const onNewWave = (from, timestamp, message) => {
+      console.log("NewWave", from, timestamp, message);
+      setAllWaves(prevState => [
+        ...prevState,
+        {
+          address: from,
+          timestamp: new Date(timestamp * 1000),
+          message: message,
+        },
+      ]);
+    };
+
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+      wavePortalContract.on("NewWave", onNewWave);
+    }
+
+    return () => {
+      if (wavePortalContract) {
+        wavePortalContract.off("NewWave", onNewWave);
+      }
+    };
   }, []);
 
   useEffect(() => {
